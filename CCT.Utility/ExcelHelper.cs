@@ -47,10 +47,11 @@ namespace CCT.Utility
                     ISheet sheet = workbook.GetSheetAt(0); // 获取此文件第一个Sheet页
                     for (int i = 1; i <= sheet.LastRowNum; i++) // 从1开始，第0行为单元头
                     {
+                        bool emptyRow = true; //用来判断是否是空行
                         // 1.判断当前行是否空行，若空行就不在进行读取下一行操作，结束Excel读取操作
                         if (sheet.GetRow(i) == null)
                         {
-                            break;
+                            break; // 这里空行跳出并不能避免有些肉眼看不见内，容但的确不是空行情况，所以增加变量emptyRow
                         }
 
                         T en = new T();
@@ -60,35 +61,38 @@ namespace CCT.Utility
                             // 2.若属性头的名称包含'.',就表示是子类里的属性，那么就要遍历子类，eg：UserEn.TrueName
                             if (keys[j].IndexOf(".") >= 0)
                             {
-                                // 2.1解析子类属性
-                                string[] properotyArray = keys[j].Split(new string[] { "." }, StringSplitOptions.RemoveEmptyEntries);
-                                string subClassName = properotyArray[0]; // '.'前面的为子类的名称
-                                string subClassProperotyName = properotyArray[1]; // '.'后面的为子类的属性名称
-                                System.Reflection.PropertyInfo subClassInfo = en.GetType().GetProperty(subClassName); // 获取子类的类型
-                                if (subClassInfo != null)
-                                {
-                                    // 2.1.1 获取子类的实例
-                                    var subClassEn = en.GetType().GetProperty(subClassName).GetValue(en, null);
-                                    // 2.1.2 根据属性名称获取子类里的属性信息
-                                    System.Reflection.PropertyInfo properotyInfo = subClassInfo.PropertyType.GetProperty(subClassProperotyName);
-                                    if (properotyInfo != null)
-                                    {
-                                        try
-                                        {
-                                            // Excel单元格的值转换为对象属性的值，若类型不对，记录出错信息
-                                            properotyInfo.SetValue(subClassEn, GetExcelCellToProperty(properotyInfo.PropertyType, sheet.GetRow(i).GetCell(j)), null);
-                                        }
-                                        catch (Exception e)
-                                        {
-                                            if (errStr.Length == 0)
-                                            {
-                                                errStr = "第" + i + "行数据转换异常：";
-                                            }
-                                            errStr += cellHeard[keys[j]] + "列；";
-                                        }
+                                #region 暂时先关掉，不支持属性名有点的情况
+                                //// 2.1解析子类属性
+                                //string[] properotyArray = keys[j].Split(new string[] { "." }, StringSplitOptions.RemoveEmptyEntries);
+                                //string subClassName = properotyArray[0]; // '.'前面的为子类的名称
+                                //string subClassProperotyName = properotyArray[1]; // '.'后面的为子类的属性名称
+                                //System.Reflection.PropertyInfo subClassInfo = en.GetType().GetProperty(subClassName); // 获取子类的类型
+                                //if (subClassInfo != null)
+                                //{
+                                //    // 2.1.1 获取子类的实例
+                                //    var subClassEn = en.GetType().GetProperty(subClassName).GetValue(en, null);
+                                //    // 2.1.2 根据属性名称获取子类里的属性信息
+                                //    System.Reflection.PropertyInfo properotyInfo = subClassInfo.PropertyType.GetProperty(subClassProperotyName);
+                                //    if (properotyInfo != null)
+                                //    {
+                                //        try
+                                //        {
+                                //            // Excel单元格的值转换为对象属性的值，若类型不对，记录出错信息
+                                //            properotyInfo.SetValue(subClassEn, GetExcelCellToProperty(properotyInfo.PropertyType, sheet.GetRow(i).GetCell(j)), null);
+                                //        }
+                                //        catch (Exception e)
+                                //        {
+                                //            if (errStr.Length == 0)
+                                //            {
+                                //                errStr = "第" + i + "行数据转换异常：";
+                                //            }
+                                //            errStr += cellHeard[keys[j]] + "列；";
+                                //        }
 
-                                    }
-                                }
+                                //    }
+                                //} 
+                                #endregion
+                                break;
                             }
                             else
                             {
@@ -99,7 +103,12 @@ namespace CCT.Utility
                                     try
                                     {
                                         // Excel单元格的值转换为对象属性的值，若类型不对，记录出错信息
-                                        properotyInfo.SetValue(en, GetExcelCellToProperty(properotyInfo.PropertyType, sheet.GetRow(i).GetCell(j)), null);
+                                        object v = GetExcelCellToProperty(properotyInfo.PropertyType, sheet.GetRow(i).GetCell(j));
+                                        properotyInfo.SetValue(en, v, null);
+                                        if (v != null && !string.IsNullOrEmpty(v.ToString().Trim()))
+                                        {
+                                            emptyRow = false;
+                                        }
                                     }
                                     catch (Exception e)
                                     {
@@ -117,7 +126,10 @@ namespace CCT.Utility
                         {
                             errorMsg.AppendLine(errStr);
                         }
-                        enlist.Add(en);
+                        if (!emptyRow)
+                        {
+                            enlist.Add(en);
+                        }
                     }
                 }
                 return enlist;
@@ -154,10 +166,11 @@ namespace CCT.Utility
                 ISheet sheet = workbook.GetSheetAt(0); // 获取此文件第一个Sheet页
                 for (int i = 1; i <= sheet.LastRowNum; i++) // 从1开始，第0行为单元头
                 {
+                    bool emptyRow = true; //用来判断是否是空行
                     // 1.判断当前行是否空行，若空行就不在进行读取下一行操作，结束Excel读取操作
                     if (sheet.GetRow(i) == null)
                     {
-                        break;
+                        break; // 这里空行跳出并不能避免有些肉眼看不见内，容但的确不是空行情况，所以增加变量emptyRow
                     }
 
                     T en = new T();
@@ -167,35 +180,38 @@ namespace CCT.Utility
                         // 2.若属性头的名称包含'.',就表示是子类里的属性，那么就要遍历子类，eg：UserEn.TrueName
                         if (keys[j].IndexOf(".") >= 0)
                         {
-                            // 2.1解析子类属性
-                            string[] properotyArray = keys[j].Split(new string[] { "." }, StringSplitOptions.RemoveEmptyEntries);
-                            string subClassName = properotyArray[0]; // '.'前面的为子类的名称
-                            string subClassProperotyName = properotyArray[1]; // '.'后面的为子类的属性名称
-                            System.Reflection.PropertyInfo subClassInfo = en.GetType().GetProperty(subClassName); // 获取子类的类型
-                            if (subClassInfo != null)
-                            {
-                                // 2.1.1 获取子类的实例
-                                var subClassEn = en.GetType().GetProperty(subClassName).GetValue(en, null);
-                                // 2.1.2 根据属性名称获取子类里的属性信息
-                                System.Reflection.PropertyInfo properotyInfo = subClassInfo.PropertyType.GetProperty(subClassProperotyName);
-                                if (properotyInfo != null)
-                                {
-                                    try
-                                    {
-                                        // Excel单元格的值转换为对象属性的值，若类型不对，记录出错信息
-                                        properotyInfo.SetValue(subClassEn, GetExcelCellToProperty(properotyInfo.PropertyType, sheet.GetRow(i).GetCell(j)), null);
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        if (errStr.Length == 0)
-                                        {
-                                            errStr = "第" + i + "行数据转换异常：";
-                                        }
-                                        errStr += cellHeard[keys[j]] + "列；";
-                                    }
+                            #region 暂时先关掉，不支持属性名有点的情况
+                            //// 2.1解析子类属性
+                            //string[] properotyArray = keys[j].Split(new string[] { "." }, StringSplitOptions.RemoveEmptyEntries);
+                            //string subClassName = properotyArray[0]; // '.'前面的为子类的名称
+                            //string subClassProperotyName = properotyArray[1]; // '.'后面的为子类的属性名称
+                            //System.Reflection.PropertyInfo subClassInfo = en.GetType().GetProperty(subClassName); // 获取子类的类型
+                            //if (subClassInfo != null)
+                            //{
+                            //    // 2.1.1 获取子类的实例
+                            //    var subClassEn = en.GetType().GetProperty(subClassName).GetValue(en, null);
+                            //    // 2.1.2 根据属性名称获取子类里的属性信息
+                            //    System.Reflection.PropertyInfo properotyInfo = subClassInfo.PropertyType.GetProperty(subClassProperotyName);
+                            //    if (properotyInfo != null)
+                            //    {
+                            //        try
+                            //        {
+                            //            // Excel单元格的值转换为对象属性的值，若类型不对，记录出错信息
+                            //            properotyInfo.SetValue(subClassEn, GetExcelCellToProperty(properotyInfo.PropertyType, sheet.GetRow(i).GetCell(j)), null);
+                            //        }
+                            //        catch (Exception e)
+                            //        {
+                            //            if (errStr.Length == 0)
+                            //            {
+                            //                errStr = "第" + i + "行数据转换异常：";
+                            //            }
+                            //            errStr += cellHeard[keys[j]] + "列；";
+                            //        }
 
-                                }
-                            }
+                            //    }
+                            //} 
+                            #endregion
+                            break;
                         }
                         else
                         {
@@ -206,7 +222,12 @@ namespace CCT.Utility
                                 try
                                 {
                                     // Excel单元格的值转换为对象属性的值，若类型不对，记录出错信息
-                                    properotyInfo.SetValue(en, GetExcelCellToProperty(properotyInfo.PropertyType, sheet.GetRow(i).GetCell(j)), null);
+                                    object v = GetExcelCellToProperty(properotyInfo.PropertyType, sheet.GetRow(i).GetCell(j));
+                                    properotyInfo.SetValue(en, v, null);
+                                    if (v != null && !string.IsNullOrEmpty(v.ToString().Trim()))
+                                    {
+                                        emptyRow = false;
+                                    }
                                 }
                                 catch (Exception e)
                                 {
@@ -224,7 +245,10 @@ namespace CCT.Utility
                     {
                         errorMsg.AppendLine(errStr);
                     }
-                    enlist.Add(en);
+                    if (!emptyRow)
+                    {
+                        enlist.Add(en);
+                    }
                 }
 
                 return enlist;
