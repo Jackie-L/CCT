@@ -105,7 +105,8 @@ namespace CCT.Utility
                                         // Excel单元格的值转换为对象属性的值，若类型不对，记录出错信息
                                         object v = GetExcelCellToProperty(properotyInfo.PropertyType, sheet.GetRow(i).GetCell(j));
                                         properotyInfo.SetValue(en, v, null);
-                                        if (v != null && !string.IsNullOrEmpty(v.ToString().Trim()))
+                                        if (sheet.GetRow(i).GetCell(j) != null
+                                        && !string.IsNullOrEmpty(sheet.GetRow(i).GetCell(j).ToString()))
                                         {
                                             emptyRow = false;
                                         }
@@ -224,7 +225,8 @@ namespace CCT.Utility
                                     // Excel单元格的值转换为对象属性的值，若类型不对，记录出错信息
                                     object v = GetExcelCellToProperty(properotyInfo.PropertyType, sheet.GetRow(i).GetCell(j));
                                     properotyInfo.SetValue(en, v, null);
-                                    if (v != null && !string.IsNullOrEmpty(v.ToString().Trim()))
+                                    if (sheet.GetRow(i).GetCell(j) != null
+                                        && !string.IsNullOrEmpty(sheet.GetRow(i).GetCell(j).ToString()))
                                     {
                                         emptyRow = false;
                                     }
